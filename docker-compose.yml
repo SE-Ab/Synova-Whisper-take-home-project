@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  frontend:
+    image: openai-proxy/frontend
+    container_name: proxy_frontend
+    build:
+      context: ./frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - proxy
+
+  proxy:
+    image: openai-proxy/proxy-service
+    container_name: proxy_service
+    build:
+      context: ./backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./audit_data:/app/audit_data
+      - ./backend/signing_key.pem:/app/signing_key.pem:ro
+    env_file:
+      - .env
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000

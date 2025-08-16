@@ -1,0 +1,6 @@
+fastapi
+uvicorn[standard]
+httpx
+cryptography
+pydantic-settings
+portalocker

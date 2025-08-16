@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Proxy Interface | Modern Edition</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.8/purify.min.js"></script>
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+    <style>
+        /* Use Inter font */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+
+        /* Markdown Content Styling */
+        .markdown-content h1,
+        .markdown-content h2,
+        .markdown-content h3 {
+            border-bottom: 1px solid #475569;
+            padding-bottom: 0.3em;
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        .markdown-content pre {
+            background-color: #020617;
+            /* Slate 950 for contrast */
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin: 1rem 0;
+            position: relative;
+            border: 1px solid #1e293b;
+        }
+
+        .markdown-content code:not(pre > code) {
+            background-color: #334155;
+            color: #e2e8f0;
+            padding: 0.2em 0.4em;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+
+        .markdown-content p {
+            line-height: 1.7;
+            margin-bottom: 1rem;
+        }
+
+        .markdown-content ul,
+        .markdown-content ol {
+            list-style-position: outside;
+            padding-left: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .markdown-content a {
+            color: #67e8f9;
+            text-decoration: underline;
+            text-underline-offset: 2px;
+        }
+
+        .markdown-content blockquote {
+            border-left: 4px solid #475569;
+            padding-left: 1rem;
+            color: #94a3b8;
+            margin-left: 0;
+            font-style: italic;
+        }
+
+        /* Typing Cursor */
+        .cursor {
+            display: inline-block;
+            width: 3px;
+            height: 1.2em;
+            background-color: #67e8f9;
+            vertical-align: bottom;
+            animation: blink 1s step-end infinite;
+        }
+
+        @keyframes blink {
+            50% {
+                opacity: 0;
+            }
+        }
+
+        /* Loading/Thinking animation for AI avatar */
+        .is-thinking {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        @keyframes pulse {
+            50% {
+                opacity: .5;
+            }
+        }
+
+        /* Copy Code Button */
+        .copy-btn {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background-color: #1e293b;
+            color: #cbd5e1;
+            border: 1px solid #334155;
+            padding: 0.3rem 0.6rem;
+            border-radius: 0.375rem;
+            font-size: 0.8rem;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s, background-color 0.2s;
+        }
+
+        .markdown-content pre:hover .copy-btn {
+            opacity: 1;
+        }
+
+        .copy-btn:hover {
+            background-color: #334155;
+        }
+
+        /* Message Fade-in Animation */
+        @keyframes fade-in-up {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in-up {
+            animation: fade-in-up 0.5s ease-out forwards;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-900 text-slate-300 font-sans flex flex-col h-screen">
+
+    <header
+        class="sticky top-0 z-20 text-center p-4 border-b border-slate-700/50 bg-slate-900/70 backdrop-blur-lg flex-shrink-0">
+        <div class="max-w-4xl mx-auto flex items-center justify-center gap-3">
+            <div
+                class="w-8 h-8 rounded-full bg-gradient-to-tr from-cyan-400 to-violet-500 flex items-center justify-center">
+                <svg class="w-5 h-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                    stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.898 20.562L16.25 22.5l-.648-1.938a3.375 3.375 0 00-2.694-2.694L11.25 18l1.938-.648a3.375 3.375 0 002.694-2.694L16.25 13.5l.648 1.938a3.375 3.375 0 002.694 2.694L21.75 18l-1.938.648a3.375 3.375 0 00-2.694 2.694z" />
+                </svg>
+            </div>
+            <h1 class="text-xl font-bold text-slate-100">AI</h1>
+        </div>
+    </header>
+
+    <main id="chat-container" class="flex-1 overflow-y-auto">
+        <div id="chat-log" class="max-w-4xl mx-auto p-4 sm:p-6 space-y-6" aria-live="polite">
+            <!-- Initial AI Welcome Message -->
+            <div class="flex items-start gap-4 justify-end">
+                <div class="bg-slate-800 rounded-xl p-4 max-w-[85%] shadow-md markdown-content border border-slate-700">
+                    <p>Hello! I am an AI streaming through a secure proxy. Ask me anything."</p>
+                </div>
+                <div
+                    class="ai-avatar w-10 h-10 rounded-full bg-gradient-to-tr from-cyan-400 to-violet-500 flex-shrink-0 shadow-lg flex items-center justify-center">
+                    <svg class="w-6 h-6 text-white/80" xmlns="http://www.w3.org/2000/svg" fill="none"
+                        viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M15.042 21.672L13.684 16.6m0 0l-2.51 2.225.569-9.47 5.227 7.917-3.286-.672zM12 2.25V4.5m5.834.166l-1.591 1.591M21.75 12h-2.25m-1.666 5.834L16.5 16.5M4.5 12H2.25m1.666-5.834L5.5 7.5m5.5 5.5l-2.51 2.225.569-9.47 5.227 7.917-3.286-.672z" />
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="sticky bottom-0 z-10 bg-slate-900/70 backdrop-blur-lg">
+        <div class="max-w-4xl mx-auto p-4 sm:p-6">
+            <div id="stop-button-container" class="flex justify-center mb-3" style="display: none;">
+                <button id="stop-btn"
+                    class="border border-slate-600 text-slate-300 rounded-lg px-4 py-2 text-sm hover:bg-slate-700 transition-colors flex items-center gap-2">
+                    <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path
+                            d="M5.25 3A2.25 2.25 0 003 5.25v9.5A2.25 2.25 0 005.25 17h9.5A2.25 2.25 0 0017 14.75v-9.5A2.25 2.25 0 0014.75 3h-9.5z" />
+                    </svg>
+                    Stop Generating
+                </button>
+            </div>
+            <form id="chat-form" class="relative">
+                <div
+                    class="overflow-hidden rounded-2xl border border-slate-700 shadow-sm focus-within:border-cyan-500 focus-within:ring-2 focus-within:ring-cyan-500/50 transition-all duration-200 bg-slate-800">
+                    <textarea id="prompt-input"
+                        class="w-full block bg-slate-800 border-0 resize-none p-4 pr-16 placeholder-slate-400 focus:ring-0 sm:text-sm text-slate-200"
+                        placeholder="Ask me anything..." rows="1"></textarea>
+
+                    <div class="absolute top-0 right-0 bottom-0 p-2 flex items-center">
+                        <button id="submit-btn" type="submit"
+                            class="bg-cyan-500 hover:bg-cyan-600 transition-all text-white font-semibold rounded-xl h-10 w-10 disabled:bg-slate-600 disabled:cursor-not-allowed disabled:opacity-70 flex items-center justify-center flex-shrink-0 transform active:scale-90"
+                            aria-label="Send message">
+                            <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                                fill="currentColor">
+                                <path
+                                    d="M3.105 2.289a.75.75 0 00-.826.95l1.414 4.949a.75.75 0 00.95.826L11.25 9.25v1.5L4.643 11.98a.75.75 0 00-.95.826l-1.414 4.949a.75.75 0 00.826.95 28.896 28.896 0 0015.293-7.154.75.75 0 000-1.118A28.897 28.897 0 003.105 2.289z" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </footer>
+
+    <!-- Templates for chat messages -->
+    <template id="user-message-template">
+        <div class="flex items-start gap-4">
+            <div class="w-10 h-10 rounded-full bg-slate-600 flex-shrink-0 shadow-lg flex items-center justify-center">
+                <svg class="w-6 h-6 text-slate-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                    fill="currentColor">
+                    <path fill-rule="evenodd"
+                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-5.5-2.5a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0zM10 12a5.99 5.99 0 00-4.793 2.39A6.483 6.483 0 0010 16.5a6.483 6.483 0 004.793-2.11A5.99 5.99 0 0010 12z"
+                        clip-rule="evenodd" />
+                </svg>
+            </div>
+            <div class="bg-sky-600 rounded-xl p-4 max-w-[85%] shadow-md markdown-content text-white"></div>
+        </div>
+    </template>
+
+    <template id="ai-message-template">
+        <div class="flex items-start gap-4 justify-end">
+            <div class="relative bg-slate-800 rounded-xl p-4 max-w-[85%] shadow-md markdown-content">
+                <div class="absolute -inset-px rounded-xl border border-slate-700"></div>
+                <div class="relative"></div>
+            </div>
+            <div
+                class="ai-avatar w-10 h-10 rounded-full bg-gradient-to-tr from-cyan-400 to-violet-500 flex-shrink-0 shadow-lg transition-opacity flex items-center justify-center">
+                <svg class="w-6 h-6 text-white/80" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                    stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M15.042 21.672L13.684 16.6m0 0l-2.51 2.225.569-9.47 5.227 7.917-3.286-.672zM12 2.25V4.5m5.834.166l-1.591 1.591M21.75 12h-2.25m-1.666 5.834L16.5 16.5M4.5 12H2.25m1.666-5.834L5.5 7.5m5.5 5.5l-2.51 2.225.569-9.47 5.227 7.917-3.286-.672z" />
+                </svg>
+            </div>
+        </div>
+    </template>
+
+    <script>
+        // DOM Elements
+        const chatContainer = document.getElementById('chat-container');
+        const chatLog = document.getElementById('chat-log');
+        const chatForm = document.getElementById('chat-form');
+        const promptInput = document.getElementById('prompt-input');
+        const submitBtn = document.getElementById('submit-btn');
+        const stopBtn = document.getElementById('stop-btn');
+        const stopContainer = document.getElementById('stop-button-container');
+
+        // State
+        let apiKey = '';
+        let abortController = new AbortController();
+
+        // --- Event Listeners ---
+        window.addEventListener('load', initialize);
+        chatForm.addEventListener('submit', (e) => { e.preventDefault(); handleSubmit(); });
+        promptInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit(); } });
+        promptInput.addEventListener('input', autoResizeTextarea);
+        stopBtn.addEventListener('click', () => { abortController.abort(); });
+
+        function autoResizeTextarea() {
+            promptInput.style.height = 'auto';
+            const newHeight = Math.min(promptInput.scrollHeight, 256); // Max height of 256px
+            promptInput.style.height = `${newHeight}px`;
+        }
+
+        // --- Core Functions ---
+        async function initialize() {
+            try {
+                const response = await fetch('http://localhost:8000/api/key');
+                if (!response.ok) throw new Error('Could not connect to the backend server.');
+                const data = await response.json();
+                apiKey = data.apiKey;
+                if (!apiKey || apiKey.startsWith("gsk_...") || apiKey === "not_set") {
+                    addMessage('ai', "<strong>Configuration Error:</strong> `GROQ_API_KEY` is not set in your `.env` file. Please add your key and restart the server.");
+                    setControlsDisabled(true, false);
+                }
+            } catch (error) {
+                addMessage('ai', `<strong>Connection Error:</strong> Could not connect to the proxy at http://localhost:8000. <br><small>Please ensure the proxy server is running. (${error.message})</small>`);
+                setControlsDisabled(true, false);
+            }
+        }
+
+        function handleSubmit() {
+            const prompt = promptInput.value.trim();
+            if (!prompt || submitBtn.disabled) return;
+            addMessage('user', prompt);
+            promptInput.value = '';
+            autoResizeTextarea();
+            handleStreamRequest(prompt);
+        }
+
+        function addMessage(sender, text) {
+            const template = document.getElementById(`${sender}-message-template`);
+            const messageClone = template.content.cloneNode(true);
+            const messageDiv = messageClone.querySelector('.flex');
+            const contentContainer = messageClone.querySelector('.markdown-content');
+            const textElement = (sender === 'ai') ? contentContainer.querySelector('.relative') : contentContainer;
+
+            if (text) {
+                textElement.innerHTML = DOMPurify.sanitize(text);
+            }
+
+            messageDiv.classList.add('fade-in-up');
+            chatLog.appendChild(messageClone);
+            scrollToBottom();
+            return chatLog.lastElementChild;
+        }
+
+        function updateAiMessage(aiMessageElement, content, isFinal = false) {
+            const contentContainer = aiMessageElement.querySelector('.markdown-content');
+            const textElement = contentContainer.querySelector('.relative');
+
+            if (textElement) {
+                const cursor = isFinal ? '' : '<span class="cursor"></span>';
+                textElement.innerHTML = DOMPurify.sanitize(marked.parse(content + cursor));
+                if (isFinal) {
+                    textElement.querySelectorAll('pre code').forEach(hljs.highlightElement);
+                    addCopyButtons(textElement);
+                }
+            }
+            scrollToBottom();
+        }
+
+        async function handleStreamRequest(prompt) {
+            setControlsDisabled(true, true);
+            const aiMessageElement = addMessage('ai', '');
+            setLoadingState(aiMessageElement, true);
+            let fullResponse = "";
+            abortController = new AbortController();
+
+            try {
+                const response = await fetch('http://localhost:8000/proxy/openai/v1/chat/completions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+                    body: JSON.stringify({ model: "llama3-70b-8192", messages: [{ role: "user", content: prompt }], stream: true }),
+                    signal: abortController.signal
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error?.message || `HTTP error! Status: ${response.status}`);
+                }
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    buffer += decoder.decode(value, { stream: true });
+                    let boundary = buffer.indexOf('\n\n');
+                    while (boundary !== -1) {
+                        const message = buffer.substring(0, boundary);
+                        buffer = buffer.substring(boundary + 2);
+
+                        if (message.startsWith('data: ')) {
+                            const dataStr = message.substring(6);
+                            if (dataStr.trim() !== '[DONE]') {
+                                try {
+                                    const data = JSON.parse(dataStr);
+                                    const content = data.choices[0]?.delta?.content || '';
+                                    if (content) {
+                                        fullResponse += content;
+                                        updateAiMessage(aiMessageElement, fullResponse);
+                                    }
+                                } catch (e) {
+                                    console.error('Failed to parse stream data chunk:', dataStr, e);
+                                }
+                            }
+                        }
+                        boundary = buffer.indexOf('\n\n');
+                    }
+                }
+                updateAiMessage(aiMessageElement, fullResponse, true);
+
+            } catch (error) {
+                if (error.name !== 'AbortError') {
+                    const errorMessage = `<p class="text-red-400"><strong>Error:</strong> ${error.message}</p>`;
+                    const textElement = aiMessageElement.querySelector('.markdown-content .relative');
+                    if (textElement) textElement.innerHTML = errorMessage;
+                } else {
+                    updateAiMessage(aiMessageElement, fullResponse + "\n\n*Stream stopped by user.*", true);
+                }
+            } finally {
+                setControlsDisabled(false, false);
+                setLoadingState(aiMessageElement, false);
+                promptInput.focus();
+                scrollToBottom();
+            }
+        }
+
+        // --- UI Helper Functions ---
+        function setControlsDisabled(disabled, isGenerating) {
+            submitBtn.disabled = disabled;
+            promptInput.disabled = disabled;
+            promptInput.placeholder = disabled && !isGenerating ? "Cannot send message" : "Ask me anything...";
+            stopContainer.style.display = isGenerating ? 'flex' : 'none';
+        }
+
+        function setLoadingState(aiMessageElement, isLoading) {
+            const avatar = aiMessageElement?.querySelector('.ai-avatar');
+            if (avatar) avatar.classList.toggle('is-thinking', isLoading);
+        }
+
+        function scrollToBottom() {
+            chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'smooth' });
+        }
+
+        function addCopyButtons(container) {
+            container.querySelectorAll('pre').forEach(block => {
+                const button = document.createElement('button');
+                button.innerText = 'Copy';
+                button.className = 'copy-btn';
+                button.onclick = () => {
+                    const code = block.querySelector('code')?.innerText;
+                    if (code) {
+                        navigator.clipboard.writeText(code);
+                        button.innerText = 'Copied!';
+                        setTimeout(() => { button.innerText = 'Copy'; }, 2000);
+                    }
+                };
+                block.appendChild(button);
+            });
+        }
+    </script>
+</body>
+
+</html>
