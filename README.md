@@ -1,4 +1,4 @@
-# Professional AI Proxy with Signed Audit Chain
+# AI Proxy with Signed Audit Chain
 
 This project implements a secure, OpenAI-compatible proxy server featuring a signed audit chain and a modern frontend interface. It is designed as a production-ready, multi-service application orchestrated with Docker Compose.
 
